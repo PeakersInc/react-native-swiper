@@ -565,6 +565,7 @@ export default class extends Component {
    */
 
   scrollTo = (index, animated = true) => {
+    const state = this.state
     if (
       this.internals.isScrolling ||
       this.state.total < 2 ||
@@ -572,13 +573,8 @@ export default class extends Component {
     )
       return
 
-    const state = this.state
-    const diff = this.state.index + (index - this.state.index)
-
-    let x = 0
-    let y = 0
-    if (state.dir === 'x') x = diff * state.width
-    if (state.dir === 'y') y = diff * state.height
+    let x = state.dir === 'x' ? index * state.width : 0
+    let y = state.dir === 'y' ? index * state.height : 0
 
     this.scrollView && this.scrollView.scrollTo({ x, y, animated })
 
@@ -593,7 +589,7 @@ export default class extends Component {
       setImmediate(() => {
         this.onScrollEnd({
           nativeEvent: {
-            position: diff
+            position: index
           }
         })
       })
