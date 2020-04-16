@@ -63,13 +63,15 @@ class LazyQuestionary extends Component {
   componentDidUpdate (prevProps, prevState) {
     if (this.syncSlide(prevProps, prevState)) { return }
     if (this.syncIndex()) { return }
-    this.processRequests()
+    if (!this.isRendering) {
+      this.processRequests()
+    }
   }
 
   syncSlide(prevProps, prevState) {
     const { children } = this.props
     const { currentIndex } = this.state
-    const isSlideChanged = !this.isRendering && prevState.currentIndex !== currentIndex
+    const isSlideChanged = prevState.currentIndex !== currentIndex
 
     if (isSlideChanged) {
       this.setState({ currentSlide: children[currentIndex].key })
@@ -81,7 +83,7 @@ class LazyQuestionary extends Component {
   syncIndex() {
     const { currentSlide } = this.state
     const resolvedCurrentSlide = this.props.resolveCurrentSlide(this.props, this.state)
-    if (resolvedCurrentSlide === currentSlide) {
+    if (resolvedCurrentSlide === currentSlide || this.isRendering) {
       return false
     }
 
