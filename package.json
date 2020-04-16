@@ -5,7 +5,7 @@
     "react-native",
     "ios"
   ],
-  "version": "0.0.2",
+  "version": "0.2.1",
   "description": "Swiper component for React Native.",
   "main": "index.js",
   "scripts": {
@@ -54,6 +54,7 @@
   "homepage": "https://github.com/leecade/react-native-swiper#readme",
   "devDependencies": {
     "babel-eslint": "^8.0.1",
+    "react-native": "^0.62.2",
     "rimraf": "^2.5.4",
     "snazzy": "^7.1.0",
     "standard": "^13.0.1",
