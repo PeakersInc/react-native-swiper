@@ -4,22 +4,25 @@ import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
 import pick from 'lodash/pick'
 import last from 'lodash/last'
+import { ENV } from '@peakers/react-native-env'
 
 import Swiper from './index'
 import { LinearGradient } from 'expo-linear-gradient'
 import { TouchableOpacity } from '@peakers/react-native-pkrs-analytics'
-import {colors, sizes} from '@peakers/css'
+import { colors, sizes } from '@peakers/css'
 
 const WINDOW_LENGTH = 15
+const isDev = ENV === 'development'
 
 class LazySwiper extends Component {
   static propTypes = Swiper.propTypes
   static OPERATIONS = [
     'updateIndex',
+    'cleanupScrolling',
     'updateRead',
     'propagateIndex',
     'updateChildren',
-    'tryToAppendChild',
+    'appendChild',
     'prepareForRender',
     'processRequests'
   ]
@@ -110,6 +113,14 @@ class LazySwiper extends Component {
     return isChanged
   }
 
+  cleanupScrolling() {
+    const { scrollTo, index, start, end } = this.state
+
+    if (isEqual(scrollTo, { index, start, end })) {
+      this.setState({ scrollTo: null })
+    }
+  }
+
   updateRead() {
     const { index, hasUnread } = this.state
     const externalIndex = this.getExternalIndex(index)
@@ -136,6 +147,7 @@ class LazySwiper extends Component {
       this.isWindowChanged(prevState)
       || this.isChildrenChanged
       || this.state.isRendering
+      || this.state.scrollTo
     ) { return }
 
     const currentChildren = this.props.children.slice(start, end)
@@ -159,7 +171,7 @@ class LazySwiper extends Component {
     return children.map(child => child.key).join()
   }
 
-  tryToAppendChild(prevProps) {
+  appendChild(prevProps) {
     const { index, children, end, renderedWith } = this.state
     const isLast = index + 1 === children.length
     const appendedChild = this.getAppendedChild(prevProps)
@@ -200,7 +212,7 @@ class LazySwiper extends Component {
   }
 
   prepareForRender() {
-    const { isRendering, index, externalIndex, children } = this.state
+    const { isRendering, index, externalIndex, children, scrollTo } = this.state
 
     if (isRendering) { return false }
 
@@ -212,7 +224,7 @@ class LazySwiper extends Component {
     const isNextExists = externalIndex < externalMaxIndex
     const { isChildrenChanged } = this
 
-    const isAbleToRender = isFirst && (isPrevExists || isChildrenChanged)
+    const isAbleToRender = isFirst && !scrollTo && (isPrevExists || isChildrenChanged)
       || isLast && (isNextExists || isChildrenChanged)
 
     if (isAbleToRender) {
@@ -243,9 +255,10 @@ class LazySwiper extends Component {
   }
 
   processScrollBy(shift, isAnimated) {
-    const { index, start, end } = this.state
+    const { index, children, renderRegistry } = this.state
     const nextIndex = index + shift
-    const hasIndex = nextIndex >= start && nextIndex < end
+    const key = children[nextIndex]?.key
+    const hasIndex = renderRegistry.has(key)
 
     if (hasIndex) {
       this.swiper.current.scrollBy(shift, isAnimated)
@@ -255,7 +268,12 @@ class LazySwiper extends Component {
   }
 
   // TODO: implement scrolling out of the window
+  // TODO: see `scrollToBottom` method for implementation ideas
   processScrollTo(index, isAnimated) {
+    if (isDev) {
+      console.warn('scrollTo might not be working properly if target is not rendered')
+    }
+
     const internalIndex = this.getInternalIndex(index)
     const hasIndex = internalIndex > -1
 
@@ -340,14 +358,36 @@ class LazySwiper extends Component {
     return this.state.children.findIndex(child => child.key === key)
   }
 
-  // TODO: implement scrolling out of the window
+  next() {
+    this.scrollBy(1, true)
+  }
+
   scrollToBottom() {
     const lastExternal = last(this.props.children)
     const lastInternal = last(this.state.children)
 
-    if (lastExternal.key === lastInternal.key) {
-      this.swiper.current.scrollTo(this.state.children.length - 1, true)
+    if (lastExternal.key !== lastInternal.key) {
+      this.rerenderToScrollTo(this.props.children.length - 1)
     }
+
+    this.scrollTo(this.props.children.length - 1, true)
+  }
+
+  rerenderToScrollTo(targetIndex) {
+    const { children, index } = this.state
+    const window = this.getWindow(this.props, targetIndex)
+    const nextChildren = this.props.children.slice(window.start, window.end)
+    nextChildren.splice(0, 1, children[index])
+
+    this.setState({
+      ...window,
+      key: this.state.key === 1 ? 0 : 1,
+      index: 0,
+      children: nextChildren,
+      renderRegistry: new Set(),
+      renderedWith: this.props.children.length,
+      scrollTo: window
+    })
   }
 
   debug() {
@@ -384,6 +424,7 @@ class LazySwiper extends Component {
       {isRendering && <View style={[styles.loader, direction < 0 ? { top: 0 } : { bottom: 200 }]}>
         <ActivityIndicator size="large" color={colors.light} />
       </View>}
+      {isDev && this.debug()}
       <View key={key} style={{ flex: 1 }} onLayout={() => this.setRenderingState({ keyRendered: key })}>
         <Swiper {...props}>
           {children.map(child => <View
