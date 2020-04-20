@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   },
   unreadBtn: {
     position: 'absolute',
-    bottom: 200,
+    bottom: 30,
     zIndex: 1,
     alignSelf: 'center'
   },
