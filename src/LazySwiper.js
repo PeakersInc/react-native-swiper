@@ -21,7 +21,7 @@ class LazySwiper extends Component {
     'cleanupScrolling',
     'updateRead',
     'propagateIndex',
-    'updateChildren',
+    'tryToUpdateChildren',
     'appendChild',
     'prepareForRender',
     'processRequests'
@@ -71,6 +71,7 @@ class LazySwiper extends Component {
     }
     this.swiper = createRef()
     this.finishRendering = debounce(this.finishRendering.bind(this), 0)
+    this.updateChildren = debounce(this.updateChildren.bind(this), 0)
 
     this.delayUntilRendered('scrollBy')
     this.delayUntilRendered('scrollTo')
@@ -140,22 +141,15 @@ class LazySwiper extends Component {
     }
   }
 
-  updateChildren(prevProps, prevState) {
-    const { start, end, children } = this.state
-
-    if (
-      this.isWindowChanged(prevState)
-      || this.isChildrenChanged
-      || this.state.isRendering
-      || this.state.scrollTo
-    ) { return }
-
-    const currentChildren = this.props.children.slice(start, end)
-
-    if (!this.isEqual(children, currentChildren)) {
-      this.setState({ children: currentChildren })
-      return true
+  tryToUpdateChildren(prevProps, prevState) {
+    if (prevState.externalIndex !== this.state.externalIndex) {
+      this.updateChildren()
     }
+  }
+
+  updateChildren() {
+    const { start, end } = this.state
+    this.setState({ children: this.props.children.slice(start, end) })
   }
 
   isWindowChanged(prevState) {
