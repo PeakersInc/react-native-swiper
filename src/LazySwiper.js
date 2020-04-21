@@ -415,7 +415,7 @@ class LazySwiper extends Component {
       {isRendering && <View onLayout={() => this.rerender(index)} style={styles.disabler} >
         {children[index]}
       </View>}
-      {isRendering && <View style={[styles.loader, direction < 0 ? { top: 0 } : { bottom: 200 }]}>
+      {isRendering && <View style={[styles.loader, direction < 0 ? { top: 0 } : { bottom: 30 }]}>
         <ActivityIndicator size="large" color={colors.light} />
       </View>}
       {isDev && this.debug()}
@@ -427,7 +427,7 @@ class LazySwiper extends Component {
           >{child}</View>)}
         </Swiper>
       </View>
-      {hasUnread && <TouchableOpacity
+      {hasUnread && !isRendering && <TouchableOpacity
         onPress={() => this.scrollToBottom()}
         style={styles.unreadBtn}
       >
