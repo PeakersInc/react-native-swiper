@@ -142,8 +142,26 @@ class LazySwiper extends Component {
   }
 
   tryToUpdateChildren(prevProps, prevState) {
-    if (prevState.externalIndex !== this.state.externalIndex) {
+    const { externalIndex, start, end, children } = this.state
+    const isIndexChanged = prevState.externalIndex !== externalIndex
+
+    if (isIndexChanged) {
       this.updateChildren()
+      return
+    }
+
+    if (
+      this.isWindowChanged(prevState)
+      || this.isChildrenChanged
+      || this.state.isRendering
+      || this.state.scrollTo
+    ) { return }
+
+    const currentChildren = this.props.children.slice(start, end)
+
+    if (!this.isEqual(children, currentChildren)) {
+      this.updateChildren()
+      return true
     }
   }
 
