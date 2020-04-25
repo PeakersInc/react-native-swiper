@@ -434,39 +434,8 @@ export default class extends Component {
    * @param  {object} offset content offset
    * @param  {string} dir    'x' || 'y'
    */
-  updateIndex = (offset, dir, cb) => {
+  updateIndex = (offset, dir, callback) => {
     const state = this.state
-    // Android ScrollView will not scrollTo certain offset when props change
-    const callback = async () => {
-      cb()
-      if (Platform.OS === 'android') {
-        if (this.state.index === 0) {
-          this.props.horizontal
-            ? this.scrollView.scrollTo({
-                x: state.width,
-                y: 0,
-                animated: false
-              })
-            : this.scrollView.scrollTo({
-                x: 0,
-                y: state.height,
-                animated: false
-              })
-        } else if (this.state.index === this.state.total - 1) {
-          this.props.horizontal
-            ? this.scrollView.scrollTo({
-                x: state.width * this.state.total,
-                y: 0,
-                animated: false
-              })
-            : this.scrollView.scrollTo({
-                x: 0,
-                y: state.height * this.state.total,
-                animated: false
-              })
-        }
-      }
-    }
     let index = state.index
     if (!this.internals.offset)
       // Android not setting this onLayout first? https://github.com/leecade/react-native-swiper/issues/582
