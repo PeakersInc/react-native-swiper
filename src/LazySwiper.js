@@ -1,5 +1,6 @@
 import React, { Component, createRef } from 'react'
-import {StyleSheet, View, Text, ActivityIndicator} from 'react-native'
+import { StyleSheet, View, Text, ActivityIndicator } from 'react-native'
+import * as Sentry from '@sentry/react-native'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
 import pick from 'lodash/pick'
@@ -297,8 +298,17 @@ class LazySwiper extends Component {
   }
 
   rerender(index) {
-    const externalIndex = this.getExternalIndex(index)
-    const window = this.getWindow(this.props, externalIndex)
+    let externalIndex
+    let window
+
+    try {
+      externalIndex = this.getExternalIndex(index)
+      window = this.getWindow(this.props, externalIndex)
+    } catch (error) {
+      this.reportRenderError(error, index, externalIndex)
+      this.finishRendering()
+      return
+    }
     const children = this.props.children.slice(window.start, window.end)
 
     this.setState({
@@ -325,6 +335,25 @@ class LazySwiper extends Component {
       start,
       end
     }
+  }
+
+  reportRenderError(error, index, externalIndex) {
+    Sentry.withScope(scope => {
+      scope.setExtra('changed_to_index', index)
+      scope.setExtra('external_index_found', externalIndex)
+      Object.keys(this.state).forEach(key => {
+        let value = this.state[key]
+
+        if (key === 'children') {
+          value = value.map(({ key }) => key)
+        } else if (value instanceof Set) {
+          value = Array.from(value.values())
+        }
+
+        scope.setExtra(`state.${key}`, value)
+      })
+      Sentry.captureException(error)
+    });
   }
 
   registerChild(key) {

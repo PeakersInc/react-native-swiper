@@ -1,26 +1,61 @@
 {
   "name": "@peakers/react-native-swiper",
-  "keywords": [
-    "react-component",
-    "react-native",
-    "ios"
-  ],
-  "version": "0.5.0",
+  "version": "0.5.4",
   "description": "Swiper component for React Native.",
+  "keywords": [
+    "ios",
+    "react-component",
+    "react-native"
+  ],
+  "homepage": "https://github.com/leecade/react-native-swiper#readme",
+  "bugs": {
+    "url": "https://github.com/leecade/react-native-swiper/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leecade/react-native-swiper.git"
+  },
+  "license": "MIT",
+  "author": "",
   "main": "index.js",
   "scripts": {
-    "commit": "npx git-cz",
-    "start": "react-native start",
-    "lint": "standard | snazzy",
-    "update": "updtr",
     "precommit": "git diff --name-only --cached --relative | grep '\\.jsx\\?$' | xargs standard | snazzy; if [ $? -ne 0 ]; then exit 1; fi",
-    "test": "npm run lint"
+    "commit": "npx git-cz",
+    "lint": "standard | snazzy",
+    "start": "react-native start",
+    "test": "npm run lint",
+    "update": "updtr"
   },
   "pre-commit": {
     "run": [
       "precommit"
     ],
     "silent": true
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "dependencies": {
+    "prop-types": "^15.5.10"
+  },
+  "devDependencies": {
+    "@sentry/react-native": "^1.3.7",
+    "babel-eslint": "^8.0.1",
+    "react-native": "^0.62.2",
+    "rimraf": "^2.5.4",
+    "snazzy": "^7.1.0",
+    "standard": "^13.0.1",
+    "updtr": "^2.0.0"
+  },
+  "peerDependencies": {
+    "@sentry/react-native": "^1.3.7",
+    "react-native": "^0.62.2"
+  },
+  "ava": {
+    "babel": "inherit",
+    "require": []
   },
   "standard": {
     "parser": "babel-eslint",
@@ -37,35 +72,5 @@
       "mock/",
       "node_modules/"
     ]
-  },
-  "ava": {
-    "babel": "inherit",
-    "require": []
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/leecade/react-native-swiper.git"
-  },
-  "author": "",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/leecade/react-native-swiper/issues"
-  },
-  "homepage": "https://github.com/leecade/react-native-swiper#readme",
-  "devDependencies": {
-    "babel-eslint": "^8.0.1",
-    "react-native": "^0.62.2",
-    "rimraf": "^2.5.4",
-    "snazzy": "^7.1.0",
-    "standard": "^13.0.1",
-    "updtr": "^2.0.0"
-  },
-  "dependencies": {
-    "prop-types": "^15.5.10"
-  },
-  "config": {
-    "commitizen": {
-      "path": "cz-conventional-changelog"
-    }
   }
 }
