@@ -5,6 +5,7 @@ import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
 import pick from 'lodash/pick'
 import last from 'lodash/last'
+import toPairs from 'lodash/toPairs'
 import { ENV } from '@peakers/react-native-env'
 
 import Swiper from './index'
@@ -20,9 +21,9 @@ class LazySwiper extends Component {
   static OPERATIONS = [
     'updateIndex',
     'cleanupScrolling',
-    'updateRead',
     'propagateIndex',
     'tryToUpdateChildren',
+    'updateRead',
     'appendChild',
     'prepareForRender',
     'processRequests'
@@ -123,16 +124,6 @@ class LazySwiper extends Component {
     }
   }
 
-  updateRead() {
-    const { index, hasUnread } = this.state
-    const externalIndex = this.getExternalIndex(index)
-    const isLast = externalIndex + 1 === this.props.children.length
-
-    if (isLast && hasUnread) {
-      this.setState({ hasUnread: false })
-    }
-  }
-
   propagateIndex(prevProps, prevState) {
     const { externalIndex } = this.state
     const { onIndexChanged } = this.props
@@ -182,6 +173,16 @@ class LazySwiper extends Component {
 
   toComparable(children) {
     return children.map(child => child.key).join()
+  }
+
+  updateRead() {
+    const { index, hasUnread } = this.state
+    const externalIndex = this.getExternalIndex(index)
+    const isLast = externalIndex + 1 === this.props.children.length
+
+    if (isLast && hasUnread) {
+      this.setState({ hasUnread: false })
+    }
   }
 
   appendChild(prevProps) {
@@ -298,14 +299,19 @@ class LazySwiper extends Component {
   }
 
   rerender(index) {
-    let externalIndex
+    const externalIndex = this.getExternalIndex(index)
+
+    if (externalIndex < 0) {
+      this.finishRendering()
+      return
+    }
+
     let window
 
     try {
-      externalIndex = this.getExternalIndex(index)
       window = this.getWindow(this.props, externalIndex)
     } catch (error) {
-      this.reportRenderError(error, index, externalIndex)
+      this.reportError(error, [{ external_index_found: externalIndex }])
       this.finishRendering()
       return
     }
@@ -337,25 +343,6 @@ class LazySwiper extends Component {
     }
   }
 
-  reportRenderError(error, index, externalIndex) {
-    Sentry.withScope(scope => {
-      scope.setExtra('changed_to_index', index)
-      scope.setExtra('external_index_found', externalIndex)
-      Object.keys(this.state).forEach(key => {
-        let value = this.state[key]
-
-        if (key === 'children') {
-          value = value.map(({ key }) => key)
-        } else if (value instanceof Set) {
-          value = Array.from(value.values())
-        }
-
-        scope.setExtra(`state.${key}`, value)
-      })
-      Sentry.captureException(error)
-    });
-  }
-
   registerChild(key) {
     const renderRegistry = new Set(this.state.renderRegistry.add(key))
     this.setRenderingState({ renderRegistry })
@@ -385,18 +372,55 @@ class LazySwiper extends Component {
   }
 
   getExternalIndex(internalIndex) {
-    const { key } = this.state.children[internalIndex]
+    const key = this.state.children[internalIndex]?.key
+
+    if (!key) {
+      this.reportIndexError('getExternalIndex', internalIndex)
+      return -1
+    }
+
     return this.props.children.findIndex(child => child.key === key)
   }
 
   getInternalIndex(externalIndex) {
-    const { key } = this.props.children[externalIndex]
+    const key = this.props.children[externalIndex]?.key
+
+    if (!key) {
+      this.reportIndexError('getInternalIndex', externalIndex)
+      return -1
+    }
 
     if (!this.state.renderRegistry.has(key)) {
       return -1
     }
 
     return this.state.children.findIndex(child => child.key === key)
+  }
+
+  reportIndexError(method, index) {
+    this.reportError(
+      new Error(`Evaluating ${method}`),
+      [{ arg_index: index }]
+    )
+  }
+
+  reportError(error, extras = []) {
+    error.message += ' | handled'
+    Sentry.withScope(scope => {
+      extras.forEach(data => scope.setExtra(...toPairs(data)))
+      Object.keys(this.state).forEach(key => {
+        let value = this.state[key]
+
+        if (key === 'children') {
+          value = value.map(({ key }) => key)
+        } else if (value instanceof Set) {
+          value = Array.from(value.values())
+        }
+
+        scope.setExtra(`state.${key}`, value)
+      })
+      Sentry.captureException(error)
+    });
   }
 
   next() {
