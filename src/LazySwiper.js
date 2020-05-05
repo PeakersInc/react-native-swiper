@@ -104,7 +104,8 @@ class LazySwiper extends Component {
     if (!isChanged) { return isChanged }
 
     const externalIndex = this.getExternalIndex(index)
-    isChanged = externalIndex !== prevExternalIndex
+
+    isChanged = externalIndex > -1 && externalIndex !== prevExternalIndex
 
     if (isChanged) {
       this.setState({
