@@ -19,6 +19,7 @@ const isDev = ENV === 'development'
 class LazySwiper extends Component {
   static propTypes = Swiper.propTypes
   static OPERATIONS = [
+    'verifyWindow',
     'updateIndex',
     'cleanupScrolling',
     'propagateIndex',
@@ -56,27 +57,31 @@ class LazySwiper extends Component {
   constructor (props) {
     super(props)
 
-    const externalIndex = props.index || 0
-    const window = this.getWindow(props, externalIndex)
+    this.state = this.getInitialState()
 
-    this.state = {
-      key: 0,
-      ...window,
-      externalIndex,
-      children: props.children.slice(window.start, window.end),
-      renderRegistry: new Set(),
-      readRegistry: new Set(),
-      requests: [],
-      renderedWith: props.children.length,
-      isRendering: true,
-      direction: -1
-    }
     this.swiper = createRef()
     this.finishRendering = debounce(this.finishRendering.bind(this), 0)
     this.updateChildren = debounce(this.updateChildren.bind(this), 0)
 
     this.delayUntilRendered('scrollBy')
     this.delayUntilRendered('scrollTo')
+  }
+
+  getInitialState() {
+    const externalIndex = this.props.index || 0
+    const window = this.getWindow(this.props, externalIndex)
+    return {
+      key: 0,
+      ...window,
+      externalIndex,
+      children: this.props.children.slice(window.start, window.end),
+      renderRegistry: new Set(),
+      readRegistry: new Set(),
+      requests: [],
+      renderedWith: this.props.children.length,
+      isRendering: true,
+      direction: -1
+    }
   }
 
   delayUntilRendered(method) {
@@ -94,6 +99,14 @@ class LazySwiper extends Component {
     while (!done && operation) {
       done = this[operation](...args)
       operation = LazySwiper.next(operation)
+    }
+  }
+
+  verifyWindow() {
+    if (this.state.end > this.props.children.length) {
+      this.setState(this.getInitialState())
+      this.reportError(new Error('Lazy window invalid'))
+      return true
     }
   }
 
