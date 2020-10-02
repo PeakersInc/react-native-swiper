@@ -469,6 +469,10 @@ class LazySwiper extends Component {
     })
   }
 
+  refresh() {
+    this.setState({ key: this.state.key === 1 ? 0 : 1 })
+  }
+
   debug() {
     const { children, index, externalIndex, start, end, isRendering, renderRegistry } = this.state
 
