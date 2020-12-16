@@ -1,5 +1,5 @@
 import React, { Component, createRef } from 'react'
-import { StyleSheet, View, Text, ActivityIndicator } from 'react-native'
+import { StyleSheet, View, Text, ActivityIndicator, Platform } from 'react-native'
 import * as Sentry from '@sentry/react-native'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
@@ -15,6 +15,7 @@ import { colors, sizes } from '@peakers/css'
 
 const WINDOW_LENGTH = 15
 const isDev = ENV === 'development'
+const isAndroid = Platform.OS === 'android'
 
 class LazySwiper extends Component {
   static propTypes = Swiper.propTypes
@@ -496,7 +497,7 @@ class LazySwiper extends Component {
       style: { opacity: isRendering ? 0 : 1 }
     })
 
-    return <View style={{ position: 'relative', flex: 1 }}>
+    return <View style={{ position: 'relative', flex: 1 }} onLayout={() => isAndroid && this.rerender(index)}>
       {isRendering && <View onLayout={() => this.rerender(index)} style={styles.disabler} >
         {children[index]}
       </View>}
