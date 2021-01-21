@@ -106,7 +106,6 @@ class LazySwiper extends Component {
   verifyWindow() {
     if (this.state.end > this.props.children.length) {
       this.setState(this.getInitialState())
-      this.reportError(new Error('Lazy window invalid'))
       return true
     }
   }
@@ -390,7 +389,6 @@ class LazySwiper extends Component {
     const key = this.state.children[internalIndex]?.key
 
     if (!key) {
-      this.reportIndexError('getExternalIndex', internalIndex)
       return -1
     }
 
@@ -401,7 +399,6 @@ class LazySwiper extends Component {
     const key = this.props.children[externalIndex]?.key
 
     if (!key) {
-      this.reportIndexError('getInternalIndex', externalIndex)
       return -1
     }
 
@@ -410,13 +407,6 @@ class LazySwiper extends Component {
     }
 
     return this.state.children.findIndex(child => child.key === key)
-  }
-
-  reportIndexError(method, index) {
-    this.reportError(
-      new Error(`Evaluating ${method}`),
-      [{ arg_index: index }]
-    )
   }
 
   reportError(error, extras = []) {
